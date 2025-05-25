@@ -381,9 +381,157 @@
             font-weight: bold;
             cursor: pointer;
         }
+
+        /* Bill Reminder Styles */
+        .reminder-popup {
+            position: fixed;
+            top: 80px;
+            left: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 200;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .reminder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .reminder-title {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reminder-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reminder-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .reminder-bill {
+            background: rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bill-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bill-name {
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .bill-amount {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .mark-paid-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .mark-paid-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .reminder-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .reminder-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .reminder-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .reminder-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 150;
+        }
     </style>
 </head>
 <body>
+    <!-- Bill Reminder Popup -->
+    <div id="reminderOverlay" class="reminder-overlay" style="display: none;"></div>
+    <div id="reminderPopup" class="reminder-popup" style="display: none;">
+        <div class="reminder-header">
+            <div class="reminder-title">
+                🔔 Bills Due Today
+            </div>
+            <button class="reminder-close" onclick="dismissReminder()">&times;</button>
+        </div>
+        <div id="reminderBills">
+            <!-- Bills due today will appear here -->
+        </div>
+        <div class="reminder-actions">
+            <button class="reminder-btn" onclick="dismissReminder()">Dismiss</button>
+            <button class="reminder-btn" onclick="openAddEntry()">Add Payment</button>
+        </div>
+    </div>
+
     <!-- Top Balance Bar -->
     <div class="balance-bar">
         <div id="dailyBalance" class="balance-display balance-positive">
@@ -643,6 +791,22 @@
                 'Discretionary': 125.02
             }
         };
+
+        // Bill due dates and reminder system
+        const billDueDates = {
+            'Rent': 1,
+            'Toyota Payment': 25,
+            'Student Loan': 20,
+            'T-Mobile': 16,
+            'Tibetannun Sponsorship': 15,
+            'Spotify': 5,
+            'Insurance': 15,
+            'HP Laptop Payment': 20,
+            'Bank of America CC Payment': 19,
+            'Claude Max': 23
+        };
+
+        let dismissedReminders = [];
         
         // Data storage
         let transactions = [];
@@ -664,7 +828,133 @@
             
             // Update displays
             updateAllDisplays();
+            
+            // Check for bill reminders
+            checkBillReminders();
         });
+
+        function checkBillReminders() {
+            const today = new Date();
+            const dayOfMonth = today.getDate();
+            const monthKey = `${today.getFullYear()}-${today.getMonth()}`;
+            
+            // Get dismissed reminders for this month
+            const dismissedKey = `dismissed-${monthKey}`;
+            dismissedReminders = JSON.parse(localStorage.getItem(dismissedKey) || '[]');
+            
+            const billsDue = [];
+            
+            // Check which bills are due today and not yet paid or dismissed
+            Object.entries(billDueDates).forEach(([billName, dueDay]) => {
+                if (dueDay === dayOfMonth && !dismissedReminders.includes(billName)) {
+                    // Check if bill has already been paid this month
+                    const isPaid = transactions.some(t => 
+                        t.category === billName && 
+                        t.type === 'expense' &&
+                        new Date(t.date).getMonth() === today.getMonth() &&
+                        new Date(t.date).getFullYear() === today.getFullYear()
+                    );
+                    
+                    if (!isPaid) {
+                        billsDue.push({
+                            name: billName,
+                            amount: budgets.fixed[billName] || 0
+                        });
+                    }
+                }
+            });
+            
+            if (billsDue.length > 0) {
+                showBillReminder(billsDue);
+            }
+        }
+
+        function showBillReminder(bills) {
+            const popup = document.getElementById('reminderPopup');
+            const overlay = document.getElementById('reminderOverlay');
+            const billsContainer = document.getElementById('reminderBills');
+            
+            billsContainer.innerHTML = '';
+            
+            bills.forEach(bill => {
+                const billDiv = document.createElement('div');
+                billDiv.className = 'reminder-bill';
+                billDiv.innerHTML = `
+                    <div class="bill-info">
+                        <div class="bill-name">${bill.name}</div>
+                        <div class="bill-amount">$${bill.amount.toFixed(2)}</div>
+                    </div>
+                    <button class="mark-paid-btn" onclick="markBillPaid('${bill.name}', ${bill.amount})">
+                        Mark Paid
+                    </button>
+                `;
+                billsContainer.appendChild(billDiv);
+            });
+            
+            overlay.style.display = 'block';
+            popup.style.display = 'block';
+        }
+
+        function markBillPaid(billName, amount) {
+            // Add transaction for the bill
+            const today = new Date();
+            addTransaction({
+                date: today.toISOString().split('T')[0],
+                category: billName,
+                amount: amount,
+                type: 'expense',
+                payment: 'ANB Checking',
+                notes: 'Marked as paid from reminder'
+            });
+            
+            // Dismiss this specific bill from reminder
+            const today_date = new Date();
+            const monthKey = `${today_date.getFullYear()}-${today_date.getMonth()}`;
+            const dismissedKey = `dismissed-${monthKey}`;
+            
+            dismissedReminders.push(billName);
+            localStorage.setItem(dismissedKey, JSON.stringify(dismissedReminders));
+            
+            updateAllDisplays();
+            
+            // Remove this bill from the current reminder
+            const billElement = event.target.closest('.reminder-bill');
+            billElement.remove();
+            
+            // If no more bills, close the reminder
+            const remainingBills = document.querySelectorAll('.reminder-bill');
+            if (remainingBills.length === 0) {
+                dismissReminder();
+            }
+        }
+
+        function dismissReminder() {
+            const popup = document.getElementById('reminderPopup');
+            const overlay = document.getElementById('reminderOverlay');
+            const today = new Date();
+            const monthKey = `${today.getFullYear()}-${today.getMonth()}`;
+            const dismissedKey = `dismissed-${monthKey}`;
+            
+            // Mark all currently showing bills as dismissed
+            const billElements = document.querySelectorAll('.bill-name');
+            billElements.forEach(billElement => {
+                const billName = billElement.textContent;
+                if (!dismissedReminders.includes(billName)) {
+                    dismissedReminders.push(billName);
+                }
+            });
+            
+            localStorage.setItem(dismissedKey, JSON.stringify(dismissedReminders));
+            
+            popup.style.display = 'none';
+            overlay.style.display = 'none';
+        }
+
+        function openAddEntry() {
+            dismissReminder();
+            document.getElementById('entrySection').classList.remove('collapsed');
+            window.scrollTo(0, 0);
+        }
         
         function toggleSection(sectionId) {
             const section = document.getElementById(sectionId);
@@ -1160,6 +1450,12 @@
             transactions = [];
             savingsBalances.marcus.starting = savingsBalances.marcus.current;
             savingsBalances.schwab.starting = savingsBalances.schwab.current;
+            
+            // Clear dismissed reminders for new month
+            const today = new Date();
+            const newMonthKey = `dismissed-${today.getFullYear()}-${today.getMonth()}`;
+            localStorage.removeItem(newMonthKey);
+            dismissedReminders = [];
             
             // Update displays
             updateAllDisplays();
