@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Budget Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #2d3748;
+        }
+        
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Top Balance Bar */
+        .balance-bar {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .balance-display {
+            font-size: 32px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .balance-positive {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .balance-negative {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        /* Left Sidebar - Entry Form */
+        .entry-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group select {
+            cursor: pointer;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            width: 100%;
+            transition: transform 0.2s;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Center - Category Boxes */
+        .category-grid {
+            overflow-y: auto;
+            padding-right: 10px;
+            max-height: calc(100vh - 120px);
+        }
+        
+        .category-section {
+            margin-bottom: 20px;
+        }
+        
+        .category-section h3 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .category-boxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .category-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .category-box h4 {
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        
+        .category-box .amount {
+            font-size: 12px;
+            margin: 5px 0;
+        }
+        
+        .category-box .budget {
+            color: #718096;
+        }
+        
+        .category-box .spent {
+            font-weight: 600;
+        }
+        
+        .category-box .remaining {
+            font-weight: 700;
+            font-size: 16px;
+        }
+        
+        /* Category box colors */
+        .box-green {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .box-yellow {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+        }
+        
+        .box-red {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .box-blue {
+            background-color: #cce5ff;
+            border: 1px solid #b8daff;
+        }
+        
+        /* Right Sidebar - Transaction Log */
+        .transaction-log {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            position: sticky;
+            top: 100px;
+        }
+        
+        .log-filters {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .transaction-item {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .transaction-item:hover {
+            background-color: #f7fafc;
+        }
+        
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .transaction-details {
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        .transaction-actions {
+            margin-top: 5px;
+        }
+        
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn-edit {
+            background-color: #4299e1;
+            color: white;
+        }
+        
+        .btn-delete {
+            background-color: #f56565;
+            color: white;
+        }
+        
+        /* Savings Section */
+        .savings-section {
+            background: white;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .savings-goal {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .goal-red {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .goal-yellow {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .goal-green {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .savings-accounts {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .tracking-boxes {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .tracking-box {
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f7fafc;
+            height: fit-content;
+        }
+        
+        .tracking-box h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .tracking-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-top: 10px;
+        }
+        
+        .savings-account {
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .savings-account h4 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .savings-line {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .editable-balance {
+            cursor: pointer;
+            text-decoration: underline;
+            color: #4299e1;
+        }
+        
+        .balance-input {
+            width: 120px;
+            padding: 4px;
+            font-size: 14px;
+        }
+        
+        /* Utility classes */
+        .text-green { color: #38a169; }
+        .text-red { color: #e53e3e; }
+        .font-bold { font-weight: 700; }
+        
+        /* Month End Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 400px;
+            border-radius: 8px;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Balance Bar -->
+        <div class="balance-bar">
+            <div id="dailyBalance" class="balance-display balance-positive">
+                Income: $0.00 - Expenses: $0.00 = Balance: $0.00
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Sidebar - Entry Form -->
+            <div class="entry-form">
+                <h2>Add Entry</h2>
+                <form id="entryForm">
+                    <div class="form-group">
+                        <label for="entryDate">Date</label>
+                        <input type="date" id="entryDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="entryCategory">Category</label>
+                        <select id="entryCategory" required>
+                            <option value="">Select Category</option>
+                            <optgroup label="INCOME">
+                                <option value="CAYL Institute">CAYL Institute</option>
+                                <option value="Regular Deposit">Regular Deposit</option>
+                                <option value="Other Income">Other Income</option>
+                            </optgroup>
+                            <optgroup label="SAVINGS">
+                                <option value="Marcus Deposit">Marcus Deposit</option>
+                                <option value="Marcus Withdrawal">Marcus Withdrawal</option>
+                                <option value="Schwab Deposit">Schwab Deposit</option>
+                                <option value="Schwab Withdrawal">Schwab Withdrawal</option>
+                                <option value="Transfer: Marcus to Schwab">Transfer: Marcus to Schwab</option>
+                                <option value="Transfer: Schwab to Marcus">Transfer: Schwab to Marcus</option>
+                            </optgroup>
+                            <optgroup label="FIXED EXPENSES">
+                                <option value="Rent">Rent</option>
+                                <option value="Toyota Payment">Toyota Payment</option>
+                                <option value="Student Loan">Student Loan (AES)</option>
+                                <option value="T-Mobile">T-Mobile</option>
+                                <option value="Tibetannun Sponsorship">Tibetannun Sponsorship</option>
+                                <option value="Spotify">Spotify</option>
+                                <option value="Insurance">Insurance</option>
+                                <option value="HP Laptop Payment">HP Laptop Payment</option>
+                                <option value="Bank of America CC Payment">Bank of America CC Payment</option>
+                                <option value="Claude Max">Claude Max</option>
+                            </optgroup>
+                            <optgroup label="VARIABLE EXPENSES">
+                                <option value="Groceries">Groceries</option>
+                                <option value="Restaurants">Restaurants</option>
+                                <option value="Gas">Gas</option>
+                                <option value="Maintenance">Maintenance</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Personal">Personal</option>
+                                <option value="Gifts">Gifts</option>
+                                <option value="Discretionary">Discretionary</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="entryAmount">Amount</label>
+                        <input type="number" id="entryAmount" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="entryPayment">Payment Method</label>
+                        <select id="entryPayment">
+                            <option value="ANB Checking">ANB Checking</option>
+                            <option value="Chase Checking">Chase Checking</option>
+                            <option value="Chase CC">Chase CC</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Transfer">Transfer</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="entryNotes">Notes</label>
+                        <textarea id="entryNotes" rows="2"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">Add Entry</button>
+                </form>
+                
+                <hr style="margin: 20px 0;">
+                
+                <button class="btn" onclick="saveData()">Save Month Data</button>
+                <button class="btn" onclick="loadData()">Load Month Data</button>
+                <button class="btn" onclick="endMonth()">End Month</button>
+            </div>
+            
+            <!-- Center - Category Boxes -->
+            <div class="category-grid">
+                <div class="category-section">
+                    <h3>FIXED EXPENSES</h3>
+                    <div class="category-boxes" id="fixedBoxes">
+                        <!-- Fixed expense boxes will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="category-section">
+                    <h3>VARIABLE EXPENSES</h3>
+                    <div class="category-boxes" id="variableBoxes">
+                        <!-- Variable expense boxes will be generated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Sidebar - Transaction Log -->
+            <div class="transaction-log">
+                <h3>Transaction Log</h3>
+                <div class="log-filters">
+                    <select id="filterCategory" style="width: 100%; margin-bottom: 10px;">
+                        <option value="">All Categories</option>
+                        <option value="income">Income Only</option>
+                        <option value="expense">Expenses Only</option>
+                        <option value="savings">Savings Only</option>
+                    </select>
+                    <input type="date" id="filterStart" placeholder="Start Date" style="width: 48%; margin-right: 4%;">
+                    <input type="date" id="filterEnd" placeholder="End Date" style="width: 48%;">
+                    <button class="btn" onclick="clearFilters()" style="margin-top: 10px;">Clear Filters</button>
+                </div>
+                <div id="transactionList">
+                    <!-- Transactions will be displayed here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Savings Section -->
+        <div class="savings-section">
+            <h3>SAVINGS ACCOUNTS</h3>
+            <div id="savingsGoal" class="savings-goal goal-red">
+                <h4>MONTHLY SAVINGS GOAL</h4>
+                <div>Target: $6,000.00</div>
+                <div>Completed: <span id="savingsCompleted">$0.00</span> <span id="savingsCheck"></span></div>
+            </div>
+            
+            <div class="savings-accounts">
+                <div class="savings-account">
+                    <h4>MARCUS SAVINGS</h4>
+                    <div class="savings-line">
+                        <span>Starting:</span>
+                        <span id="marcusStarting">$22,234.46</span>
+                    </div>
+                    <div class="savings-line">
+                        <span>+ Deposits:</span>
+                        <span id="marcusDeposits">$0.00</span>
+                    </div>
+                    <div class="savings-line">
+                        <span>- Withdrawals:</span>
+                        <span id="marcusWithdrawals">$0.00</span>
+                    </div>
+                    <div class="savings-line">
+                        <span>Current:</span>
+                        <span id="marcusCurrent" class="editable-balance font-bold" onclick="editBalance('marcus')">$22,234.46</span>
+                    </div>
+                </div>
+                
+                <div class="savings-account">
+                    <h4>SCHWAB INVESTMENT</h4>
+                    <div class="savings-line">
+                        <span>Starting:</span>
+                        <span id="schwabStarting">$6,107.08</span>
+                    </div>
+                    <div class="savings-line">
+                        <span>+ Deposits:</span>
+                        <span id="schwabDeposits">$0.00</span>
+                    </div>
+                    <div class="savings-line">
+                        <span>- Withdrawals:</span>
+                        <span id="schwabWithdrawals">$0.00</span>
+                    </div>
+                    <div class="savings-line">
+                        <span>Current:</span>
+                        <span id="schwabCurrent" class="editable-balance font-bold" onclick="editBalance('schwab')">$6,107.08</span>
+                    </div>
+                </div>
+                
+                <div class="tracking-boxes">
+                    <div class="tracking-box">
+                        <h4>CHASE CC USAGE</h4>
+                        <div>This Month:</div>
+                        <div id="chaseCCTotal" class="tracking-amount">$0.00</div>
+                    </div>
+                    
+                    <div class="tracking-box">
+                        <h4>VARIABLE EXPENSES TOTAL</h4>
+                        <div>Running Total:</div>
+                        <div id="variableTotal" class="tracking-amount">$0.00</div>
+                        <div style="font-size: 12px; color: #718096; margin-top: 5px;">
+                            Budget: $1,115.02
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Month End Modal -->
+    <div id="monthEndModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Month-End Summary</h2>
+            <div id="monthEndSummary"></div>
+        </div>
+    </div>
+
+    <script>
+        // Budget definitions
+        const budgets = {
+            fixed: {
+                'Rent': 850.00,
+                'Toyota Payment': 531.00,
+                'Student Loan': 414.18,
+                'T-Mobile': 112.00,
+                'Tibetannun Sponsorship': 90.00,
+                'Spotify': 13.00,
+                'Insurance': 125.00,
+                'HP Laptop Payment': 125.00,
+                'Bank of America CC Payment': 100.00,
+                'Claude Max': 110.00
+            },
+            variable: {
+                'Groceries': 400.00,
+                'Restaurants': 315.00,
+                'Gas': 100.00,
+                'Maintenance': 50.00,
+                'Shopping': 75.00,
+                'Personal': 30.00,
+                'Gifts': 20.00,
+                'Discretionary': 125.02
+            }
+        };
+        
+        // Data storage
+        let transactions = [];
+        let savingsBalances = {
+            marcus: { starting: 22234.46, current: 22234.46 },
+            schwab: { starting: 6107.08, current: 6107.08 }
+        };
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date
+            document.getElementById('entryDate').valueAsDate = new Date();
+            
+            // Create category boxes
+            createCategoryBoxes();
+            
+            // Set up form submission
+            document.getElementById('entryForm').addEventListener('submit', handleSubmit);
+            
+            // Set up filters
+            document.getElementById('filterCategory').addEventListener('change', filterTransactions);
+            document.getElementById('filterStart').addEventListener('change', filterTransactions);
+            document.getElementById('filterEnd').addEventListener('change', filterTransactions);
+            
+            // Update displays
+            updateAllDisplays();
+        });
+        
+        function createCategoryBoxes() {
+            const fixedContainer = document.getElementById('fixedBoxes');
+            const variableContainer = document.getElementById('variableBoxes');
+            
+            // Create fixed expense boxes
+            Object.entries(budgets.fixed).forEach(([category, budget]) => {
+                fixedContainer.appendChild(createCategoryBox(category, budget));
+            });
+            
+            // Create variable expense boxes
+            Object.entries(budgets.variable).forEach(([category, budget]) => {
+                variableContainer.appendChild(createCategoryBox(category, budget));
+            });
+        }
+        
+        function createCategoryBox(category, budget) {
+            const box = document.createElement('div');
+            const isFixed = budgets.fixed.hasOwnProperty(category);
+            box.className = isFixed ? 'category-box box-blue' : 'category-box box-green';
+            box.id = `box-${category.replace(/\s/g, '-')}`;
+            box.innerHTML = `
+                <h4>${category}</h4>
+                <div class="amount budget">Budget: ${budget.toFixed(2)}</div>
+                <div class="amount spent">Spent: $0.00</div>
+                <div class="amount remaining text-green">Remaining: ${budget.toFixed(2)}</div>
+            `;
+            return box;
+        }
+        
+        function handleSubmit(e) {
+            e.preventDefault();
+            
+            const category = document.getElementById('entryCategory').value;
+            const amount = parseFloat(document.getElementById('entryAmount').value);
+            
+            // Handle Regular Deposit auto-split
+            if (category === 'Regular Deposit' && amount === 7500) {
+                // Create budget entry
+                addTransaction({
+                    date: document.getElementById('entryDate').value,
+                    category: 'Regular Deposit',
+                    amount: 1500,
+                    type: 'income',
+                    payment: document.getElementById('entryPayment').value,
+                    notes: 'Budget portion'
+                });
+                
+                // Create savings entry - balance will be updated automatically by addTransaction
+                addTransaction({
+                    date: document.getElementById('entryDate').value,
+                    category: 'Marcus Deposit',
+                    amount: 6000,
+                    type: 'savings',
+                    payment: 'Transfer',
+                    notes: 'Monthly savings goal'
+                });
+            } else {
+                // Normal transaction
+                const type = getTransactionType(category);
+                addTransaction({
+                    date: document.getElementById('entryDate').value,
+                    category: category,
+                    amount: amount,
+                    type: type,
+                    payment: document.getElementById('entryPayment').value,
+                    notes: document.getElementById('entryNotes').value
+                });
+            }
+            
+            // Reset form
+            document.getElementById('entryForm').reset();
+            document.getElementById('entryDate').valueAsDate = new Date();
+            
+            updateAllDisplays();
+        }
+        
+        function getTransactionType(category) {
+            if (['CAYL Institute', 'Regular Deposit', 'Other Income'].includes(category)) {
+                return 'income';
+            } else if (category.includes('Marcus') || category.includes('Schwab') || category.includes('Transfer:')) {
+                return 'savings';
+            } else {
+                return 'expense';
+            }
+        }
+        
+        function addTransaction(transaction) {
+            transaction.id = Date.now();
+            transactions.push(transaction);
+            
+            // Update savings balances if needed (no pending check needed now)
+            if (transaction.type === 'savings') {
+                updateSavingsBalances(transaction);
+            }
+        }
+        
+        function updateSavingsBalances(transaction) {
+            if (transaction.category === 'Marcus Deposit') {
+                savingsBalances.marcus.current += transaction.amount;
+            } else if (transaction.category === 'Marcus Withdrawal') {
+                savingsBalances.marcus.current -= transaction.amount;
+            } else if (transaction.category === 'Schwab Deposit') {
+                savingsBalances.schwab.current += transaction.amount;
+            } else if (transaction.category === 'Schwab Withdrawal') {
+                savingsBalances.schwab.current -= transaction.amount;
+            } else if (transaction.category === 'Transfer: Marcus to Schwab') {
+                savingsBalances.marcus.current -= transaction.amount;
+                savingsBalances.schwab.current += transaction.amount;
+            } else if (transaction.category === 'Transfer: Schwab to Marcus') {
+                savingsBalances.schwab.current -= transaction.amount;
+                savingsBalances.marcus.current += transaction.amount;
+            }
+        }
+        
+        function updateSavingsDisplay() {
+            // Update savings goal - count all Marcus deposits (no pending check needed)
+            const marcusDeposits = transactions
+                .filter(t => t.category === 'Marcus Deposit')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('savingsCompleted').textContent = `${marcusDeposits.toFixed(2)}`;
+            
+            const goalDiv = document.getElementById('savingsGoal');
+            goalDiv.className = 'savings-goal';
+            if (marcusDeposits >= 6000) {
+                goalDiv.classList.add('goal-green');
+                document.getElementById('savingsCheck').textContent = '✓';
+            } else if (marcusDeposits >= 3000) {
+                goalDiv.classList.add('goal-yellow');
+                document.getElementById('savingsCheck').textContent = '';
+            } else {
+                goalDiv.classList.add('goal-red');
+                document.getElementById('savingsCheck').textContent = '';
+            }
+            
+            // Update account displays
+            const marcusTransactions = transactions.filter(t => 
+                t.category === 'Marcus Deposit' || t.category === 'Marcus Withdrawal' || 
+                t.category === 'Transfer: Marcus to Schwab' || t.category === 'Transfer: Schwab to Marcus'
+            );
+            
+            const marcusDepositsTotal = marcusTransactions
+                .filter(t => t.category === 'Marcus Deposit')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const marcusWithdrawalsTotal = marcusTransactions
+                .filter(t => t.category === 'Marcus Withdrawal' || t.category === 'Transfer: Marcus to Schwab')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('marcusDeposits').textContent = `${marcusDepositsTotal.toFixed(2)}`;
+            document.getElementById('marcusWithdrawals').textContent = `${marcusWithdrawalsTotal.toFixed(2)}`;
+            document.getElementById('marcusCurrent').textContent = `${savingsBalances.marcus.current.toFixed(2)}`;
+            
+            // Update Schwab
+            const schwabTransactions = transactions.filter(t => 
+                t.category === 'Schwab Deposit' || t.category === 'Schwab Withdrawal' || 
+                t.category === 'Transfer: Schwab to Marcus' || t.category === 'Transfer: Marcus to Schwab'
+            );
+            
+            const schwabDepositsTotal = schwabTransactions
+                .filter(t => t.category === 'Schwab Deposit' || t.category === 'Transfer: Marcus to Schwab')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const schwabWithdrawalsTotal = schwabTransactions
+                .filter(t => t.category === 'Schwab Withdrawal' || t.category === 'Transfer: Schwab to Marcus')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('schwabDeposits').textContent = `${schwabDepositsTotal.toFixed(2)}`;
+            document.getElementById('schwabWithdrawals').textContent = `${schwabWithdrawalsTotal.toFixed(2)}`;
+            document.getElementById('schwabCurrent').textContent = `${savingsBalances.schwab.current.toFixed(2)}`;
+        }
+        
+        function updateTrackingBoxes() {
+            // Update Chase CC Usage
+            const chaseCCTotal = transactions
+                .filter(t => t.type === 'expense' && t.payment === 'Chase CC')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('chaseCCTotal').textContent = `${chaseCCTotal.toFixed(2)}`;
+            
+            // Update Variable Expenses Total
+            const variableCategories = Object.keys(budgets.variable);
+            const variableTotal = transactions
+                .filter(t => t.type === 'expense' && variableCategories.includes(t.category))
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('variableTotal').textContent = `${variableTotal.toFixed(2)}`;
+        }
+        
+        function updateAllDisplays() {
+            updateDailyBalance();
+            updateCategoryBoxes();
+            updateTransactionLog();
+            updateSavingsDisplay();
+            updateTrackingBoxes();
+        }
+        
+        function updateDailyBalance() {
+            const income = transactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const expenses = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const balance = income - expenses;
+            
+            const balanceDiv = document.getElementById('dailyBalance');
+            balanceDiv.textContent = `Income: $${income.toFixed(2)} - Expenses: $${expenses.toFixed(2)} = Balance: $${balance.toFixed(2)}`;
+            balanceDiv.className = `balance-display ${balance >= 0 ? 'balance-positive' : 'balance-negative'}`;
+        }
+        
+        function updateCategoryBoxes() {
+            // Reset all boxes
+            document.querySelectorAll('.category-box').forEach(box => {
+                const spentDiv = box.querySelector('.spent');
+                const remainingDiv = box.querySelector('.remaining');
+                const budgetText = box.querySelector('.budget').textContent;
+                const budgetMatch = budgetText.match(/\$[\d,]+\.?\d*/);
+                if (budgetMatch) {
+                    const budgetAmount = budgetMatch[0];
+                    spentDiv.textContent = 'Spent: $0.00';
+                    remainingDiv.textContent = `Remaining: ${budgetAmount}`;
+                    remainingDiv.className = 'amount remaining text-green';
+                }
+            });
+            
+            // Calculate spending by category
+            const spending = {};
+            transactions
+                .filter(t => t.type === 'expense')
+                .forEach(t => {
+                    spending[t.category] = (spending[t.category] || 0) + t.amount;
+                });
+            
+            // Update boxes
+            Object.entries(spending).forEach(([category, spent]) => {
+                const boxId = `box-${category.replace(/[\s]/g, '')}`;
+                const box = document.getElementById(boxId);
+                if (box) {
+                    const budget = budgets.fixed[category] || budgets.variable[category] || 0;
+                    const remaining = budget - spent;
+                    const percentage = (spent / budget) * 100;
+                    
+                    box.querySelector('.spent').textContent = `Spent: ${spent.toFixed(2)}`;
+                    box.querySelector('.remaining').textContent = `Remaining: ${remaining.toFixed(2)}`;
+                    
+                    // Update box color
+                    box.className = 'category-box';
+                    if (percentage < 50) {
+                        box.classList.add('box-green');
+                    } else if (percentage < 90) {
+                        box.classList.add('box-yellow');
+                    } else {
+                        box.classList.add('box-red');
+                    }
+                    
+                    // Update remaining text color
+                    const remainingDiv = box.querySelector('.remaining');
+                    remainingDiv.className = 'amount remaining';
+                    if (remaining >= 0) {
+                        remainingDiv.classList.add('text-green');
+                    } else {
+                        remainingDiv.classList.add('text-red');
+                    }
+                }
+            });
+        }
+        
+        function updateTransactionLog() {
+            const list = document.getElementById('transactionList');
+            const filteredTransactions = getFilteredTransactions();
+            
+            list.innerHTML = '';
+            filteredTransactions.forEach(transaction => {
+                const item = document.createElement('div');
+                item.className = 'transaction-item';
+                
+                const amountClass = transaction.type === 'income' ? 'text-green' : 'text-red';
+                const amountSign = transaction.type === 'income' ? '+' : '-';
+                
+                item.innerHTML = `
+                    <div class="transaction-header">
+                        <span><strong>${transaction.category}</strong></span>
+                        <span class="${amountClass} font-bold">${amountSign}${transaction.amount.toFixed(2)}</span>
+                    </div>
+                    <div class="transaction-details">
+                        ${transaction.date} | ${transaction.payment}
+                        ${transaction.notes ? ` | ${transaction.notes}` : ''}
+                    </div>
+                    <div class="transaction-actions">
+                        <button class="btn-small btn-edit" onclick="editTransaction(${transaction.id})">Edit</button>
+                        <button class="btn-small btn-delete" onclick="deleteTransaction(${transaction.id})">Delete</button>
+                    </div>
+                `;
+                
+                list.appendChild(item);
+            });
+        }
+        
+        function getFilteredTransactions() {
+            let filtered = [...transactions];
+            
+            const categoryFilter = document.getElementById('filterCategory').value;
+            if (categoryFilter) {
+                filtered = filtered.filter(t => t.type === categoryFilter);
+            }
+            
+            const startDate = document.getElementById('filterStart').value;
+            if (startDate) {
+                filtered = filtered.filter(t => t.date >= startDate);
+            }
+            
+            const endDate = document.getElementById('filterEnd').value;
+            if (endDate) {
+                filtered = filtered.filter(t => t.date <= endDate);
+            }
+            
+            return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+        
+        function filterTransactions() {
+            updateTransactionLog();
+        }
+        
+        function clearFilters() {
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterStart').value = '';
+            document.getElementById('filterEnd').value = '';
+            updateTransactionLog();
+        }
+        
+        function updateSavingsDisplay() {
+            // Update savings goal - count all Marcus deposits (no pending check needed)
+            const marcusDeposits = transactions
+                .filter(t => t.category === 'Marcus Deposit')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('savingsCompleted').textContent = `${marcusDeposits.toFixed(2)}`;
+            
+            const goalDiv = document.getElementById('savingsGoal');
+            goalDiv.className = 'savings-goal';
+            if (marcusDeposits >= 6000) {
+                goalDiv.classList.add('goal-green');
+                document.getElementById('savingsCheck').textContent = '✓';
+            } else if (marcusDeposits >= 3000) {
+                goalDiv.classList.add('goal-yellow');
+                document.getElementById('savingsCheck').textContent = '';
+            } else {
+                goalDiv.classList.add('goal-red');
+                document.getElementById('savingsCheck').textContent = '';
+            }
+            
+            // Update account displays
+            const marcusTransactions = transactions.filter(t => 
+                t.category === 'Marcus Deposit' || t.category === 'Marcus Withdrawal' || 
+                t.category === 'Transfer: Marcus to Schwab' || t.category === 'Transfer: Schwab to Marcus'
+            );
+            
+            const marcusDepositsTotal = marcusTransactions
+                .filter(t => t.category === 'Marcus Deposit')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const marcusWithdrawalsTotal = marcusTransactions
+                .filter(t => t.category === 'Marcus Withdrawal' || t.category === 'Transfer: Marcus to Schwab')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('marcusDeposits').textContent = `${marcusDepositsTotal.toFixed(2)}`;
+            document.getElementById('marcusWithdrawals').textContent = `${marcusWithdrawalsTotal.toFixed(2)}`;
+            document.getElementById('marcusCurrent').textContent = `${savingsBalances.marcus.current.toFixed(2)}`;
+            
+            // Update Schwab
+            const schwabTransactions = transactions.filter(t => 
+                t.category === 'Schwab Deposit' || t.category === 'Schwab Withdrawal' || 
+                t.category === 'Transfer: Schwab to Marcus' || t.category === 'Transfer: Marcus to Schwab'
+            );
+            
+            const schwabDepositsTotal = schwabTransactions
+                .filter(t => t.category === 'Schwab Deposit' || t.category === 'Transfer: Marcus to Schwab')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const schwabWithdrawalsTotal = schwabTransactions
+                .filter(t => t.category === 'Schwab Withdrawal' || t.category === 'Transfer: Schwab to Marcus')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('schwabDeposits').textContent = `${schwabDepositsTotal.toFixed(2)}`;
+            document.getElementById('schwabWithdrawals').textContent = `${schwabWithdrawalsTotal.toFixed(2)}`;
+            document.getElementById('schwabCurrent').textContent = `${savingsBalances.schwab.current.toFixed(2)}`;
+        }
+        
+        function editBalance(account) {
+            const currentSpan = document.getElementById(`${account}Current`);
+            const currentValue = savingsBalances[account].current;
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = '0.01';
+            input.value = currentValue;
+            input.className = 'balance-input';
+            
+            input.onblur = function() {
+                savingsBalances[account].current = parseFloat(input.value);
+                updateSavingsDisplay();
+            };
+            
+            input.onkeypress = function(e) {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
+            };
+            
+            currentSpan.innerHTML = '';
+            currentSpan.appendChild(input);
+            input.focus();
+        }
+        
+        function completeSavings(transactionId) {
+            const transaction = transactions.find(t => t.id === transactionId);
+            if (transaction && transaction.pending) {
+                transaction.pending = false;
+                updateSavingsBalances(transaction);
+                updateAllDisplays();
+            }
+        }
+        
+        function editTransaction(transactionId) {
+            const transaction = transactions.find(t => t.id === transactionId);
+            if (transaction) {
+                document.getElementById('entryDate').value = transaction.date;
+                document.getElementById('entryCategory').value = transaction.category;
+                document.getElementById('entryAmount').value = transaction.amount;
+                document.getElementById('entryPayment').value = transaction.payment;
+                document.getElementById('entryNotes').value = transaction.notes || '';
+                
+                deleteTransaction(transactionId);
+            }
+        }
+        
+        function deleteTransaction(transactionId) {
+            const index = transactions.findIndex(t => t.id === transactionId);
+            if (index > -1) {
+                const transaction = transactions[index];
+                
+                // Reverse savings balance changes
+                if (transaction.type === 'savings') {
+                    if (transaction.category === 'Marcus Deposit') {
+                        savingsBalances.marcus.current -= transaction.amount;
+                    } else if (transaction.category === 'Marcus Withdrawal') {
+                        savingsBalances.marcus.current += transaction.amount;
+                    } else if (transaction.category === 'Schwab Deposit') {
+                        savingsBalances.schwab.current -= transaction.amount;
+                    } else if (transaction.category === 'Schwab Withdrawal') {
+                        savingsBalances.schwab.current += transaction.amount;
+                    } else if (transaction.category === 'Transfer: Marcus to Schwab') {
+                        savingsBalances.marcus.current += transaction.amount;
+                        savingsBalances.schwab.current -= transaction.amount;
+                    } else if (transaction.category === 'Transfer: Schwab to Marcus') {
+                        savingsBalances.schwab.current -= transaction.amount;
+                        savingsBalances.marcus.current += transaction.amount;
+                    }
+                }
+                
+                transactions.splice(index, 1);
+                updateAllDisplays();
+            }
+        }
+        
+        function saveData() {
+            const data = {
+                transactions: transactions,
+                savingsBalances: savingsBalances,
+                month: new Date().toISOString().slice(0, 7)
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `budget_${data.month}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function loadData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        transactions = data.transactions || [];
+                        savingsBalances = data.savingsBalances || savingsBalances;
+                        updateAllDisplays();
+                    } catch (error) {
+                        alert('Error loading file');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+        
+        function endMonth() {
+            const totalBudget = 3585.20;
+            const totalSpent = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const rollover = totalBudget - totalSpent;
+            
+            const summary = `
+                <p>Spending Budget: $${totalBudget.toFixed(2)}</p>
+                <p>Total Spent: $${totalSpent.toFixed(2)}</p>
+                <p><strong>Rollover Pool: $${rollover.toFixed(2)}</strong></p>
+                <br>
+                <p>Choose action for rollover:</p>
+                <label><input type="radio" name="rollover" value="marcus"> Add to Marcus Savings</label><br>
+                <label><input type="radio" name="rollover" value="next" checked> Keep in next month's budget</label><br>
+                <label><input type="radio" name="rollover" value="schwab"> Transfer to Schwab</label><br>
+                <br>
+                <button class="btn" onclick="processMonthEnd()">Process & Start New Month</button>
+            `;
+            
+            document.getElementById('monthEndSummary').innerHTML = summary;
+            document.getElementById('monthEndModal').style.display = 'block';
+        }
+        
+        function processMonthEnd() {
+            const choice = document.querySelector('input[name="rollover"]:checked').value;
+            const totalBudget = 3585.20;
+            const totalSpent = transactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            const rollover = totalBudget - totalSpent;
+            
+            if (rollover > 0) {
+                if (choice === 'marcus') {
+                    addTransaction({
+                        date: new Date().toISOString().split('T')[0],
+                        category: 'Marcus Deposit',
+                        amount: rollover,
+                        type: 'savings',
+                        payment: 'Transfer',
+                        notes: 'Month-end rollover'
+                    });
+                } else if (choice === 'schwab') {
+                    addTransaction({
+                        date: new Date().toISOString().split('T')[0],
+                        category: 'Schwab Deposit',
+                        amount: rollover,
+                        type: 'savings',
+                        payment: 'Transfer',
+                        notes: 'Month-end rollover'
+                    });
+                }
+            }
+            
+            // Save current month data
+            saveData();
+            
+            // Reset for new month
+            transactions = [];
+            savingsBalances.marcus.starting = savingsBalances.marcus.current;
+            savingsBalances.schwab.starting = savingsBalances.schwab.current;
+            
+            // Update displays
+            updateAllDisplays();
+            closeModal();
+            
+            alert('New month started! Previous month data saved.');
+        }
+        
+        function closeModal() {
+            document.getElementById('monthEndModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
