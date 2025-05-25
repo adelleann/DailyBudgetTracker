@@ -2,44 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Budget Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Budget Tracker</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f5f7fa;
             color: #2d3748;
-        }
-        
-        .container {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            padding-bottom: 80px;
+            overflow-x: hidden;
         }
         
         /* Top Balance Bar */
         .balance-bar {
-            background: white;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            text-align: center;
-            position: sticky;
+            position: fixed;
             top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             z-index: 100;
+            text-align: center;
         }
         
         .balance-display {
-            font-size: 32px;
+            font-size: 18px;
             font-weight: bold;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
-            transition: all 0.3s ease;
         }
         
         .balance-positive {
@@ -52,26 +52,59 @@
             color: #721c24;
         }
         
-        /* Main Content Area */
+        /* Main Content */
         .main-content {
-            display: grid;
-            grid-template-columns: 300px 1fr 350px;
-            gap: 20px;
-            padding: 20px;
-            flex: 1;
+            margin-top: 70px;
+            padding: 15px;
         }
         
-        /* Left Sidebar - Entry Form */
-        .entry-form {
+        /* Collapsible Sections */
+        .section {
             background: white;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .section-header:active {
+            opacity: 0.9;
+        }
+        
+        .toggle-icon {
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .section.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+        
+        .section-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .section.collapsed .section-content {
+            max-height: 0;
+        }
+        
+        /* Entry Form */
+        .entry-form {
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            height: fit-content;
-            position: sticky;
-            top: 100px;
-            max-height: calc(100vh - 120px);
-            overflow-y: auto;
         }
         
         .form-group {
@@ -80,167 +113,141 @@
         
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: 600;
             color: #4a5568;
+            font-size: 14px;
         }
         
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
-            padding: 8px 12px;
+            padding: 12px;
             border: 1px solid #cbd5e0;
-            border-radius: 4px;
-            font-size: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
         }
         
-        .form-group select {
-            cursor: pointer;
+        /* Prevent zoom on iOS */
+        input[type="number"], input[type="date"], select {
+            font-size: 16px !important;
         }
         
         .btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
             width: 100%;
-            transition: transform 0.2s;
+            cursor: pointer;
             margin-bottom: 10px;
         }
         
-        .btn:hover {
-            transform: translateY(-2px);
+        .btn:active {
+            transform: scale(0.98);
         }
         
-        /* Center - Category Boxes */
+        /* Category Boxes */
         .category-grid {
-            overflow-y: auto;
-            padding-right: 10px;
-            max-height: calc(100vh - 120px);
-        }
-        
-        .category-section {
-            margin-bottom: 20px;
-        }
-        
-        .category-section h3 {
-            color: #2d3748;
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        
-        .category-boxes {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
+            padding: 15px;
         }
         
         .category-box {
             background: white;
             padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 2px solid transparent;
         }
         
         .category-box h4 {
-            font-size: 14px;
-            color: #4a5568;
-            margin-bottom: 10px;
+            font-size: 16px;
+            color: #2d3748;
+            margin-bottom: 8px;
         }
         
         .category-box .amount {
-            font-size: 12px;
-            margin: 5px 0;
-        }
-        
-        .category-box .budget {
-            color: #718096;
-        }
-        
-        .category-box .spent {
-            font-weight: 600;
+            font-size: 14px;
+            margin: 4px 0;
         }
         
         .category-box .remaining {
             font-weight: 700;
-            font-size: 16px;
+            font-size: 18px;
         }
         
-        /* Category box colors */
         .box-green {
             background-color: #d4edda;
-            border: 1px solid #c3e6cb;
+            border-color: #c3e6cb;
         }
         
         .box-yellow {
             background-color: #fff3cd;
-            border: 1px solid #ffeeba;
+            border-color: #ffeeba;
         }
         
         .box-red {
             background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
+            border-color: #f5c6cb;
         }
         
         .box-blue {
             background-color: #cce5ff;
-            border: 1px solid #b8daff;
+            border-color: #b8daff;
         }
         
-        /* Right Sidebar - Transaction Log */
-        .transaction-log {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-height: calc(100vh - 120px);
-            overflow-y: auto;
-            position: sticky;
-            top: 100px;
-        }
-        
-        .log-filters {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
+        /* Transaction List */
+        .transaction-list {
+            padding: 15px;
         }
         
         .transaction-item {
-            padding: 10px;
-            border-bottom: 1px solid #e2e8f0;
-            font-size: 14px;
-        }
-        
-        .transaction-item:hover {
-            background-color: #f7fafc;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
         }
         
         .transaction-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+        }
+        
+        .transaction-header strong {
+            font-size: 16px;
+        }
+        
+        .transaction-amount {
+            font-size: 18px;
+            font-weight: bold;
         }
         
         .transaction-details {
             color: #718096;
-            font-size: 12px;
+            font-size: 13px;
         }
         
         .transaction-actions {
-            margin-top: 5px;
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
         }
         
         .btn-small {
-            padding: 4px 8px;
-            font-size: 12px;
-            margin-right: 5px;
+            padding: 8px 16px;
+            font-size: 14px;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
+            flex: 1;
         }
         
         .btn-edit {
@@ -254,20 +261,15 @@
         }
         
         /* Savings Section */
-        .savings-section {
-            background: white;
-            padding: 20px;
-            margin: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .savings-container {
+            padding: 15px;
         }
         
         .savings-goal {
             text-align: center;
             padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
+            border-radius: 10px;
+            margin-bottom: 15px;
         }
         
         .goal-red {
@@ -285,67 +287,65 @@
             color: #155724;
         }
         
-        .savings-accounts {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
+        .savings-account {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
         }
         
-        .tracking-boxes {
+        .savings-line {
             display: flex;
-            flex-direction: column;
-            gap: 20px;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 15px;
         }
         
         .tracking-box {
+            background: #f7fafc;
             border: 1px solid #e2e8f0;
             padding: 15px;
-            border-radius: 8px;
-            background-color: #f7fafc;
-            height: fit-content;
-        }
-        
-        .tracking-box h4 {
-            color: #2d3748;
-            margin-bottom: 10px;
-            font-size: 16px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
         }
         
         .tracking-amount {
             font-size: 24px;
             font-weight: bold;
             color: #2d3748;
-            margin-top: 10px;
+            margin: 10px 0;
         }
         
-        .savings-account {
-            border: 1px solid #e2e8f0;
-            padding: 15px;
-            border-radius: 8px;
-        }
-        
-        .savings-account h4 {
-            color: #2d3748;
-            margin-bottom: 10px;
-        }
-        
-        .savings-line {
+        /* Bottom Fixed Bar */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 10px 15px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
             display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 14px;
+            justify-content: space-around;
+            z-index: 100;
         }
         
-        .editable-balance {
-            cursor: pointer;
-            text-decoration: underline;
-            color: #4299e1;
+        .bottom-stat {
+            text-align: center;
+            flex: 1;
         }
         
-        .balance-input {
-            width: 120px;
-            padding: 4px;
-            font-size: 14px;
+        .bottom-stat-label {
+            font-size: 11px;
+            color: #718096;
+        }
+        
+        .bottom-stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2d3748;
         }
         
         /* Utility classes */
@@ -353,7 +353,7 @@
         .text-red { color: #e53e3e; }
         .font-bold { font-weight: 700; }
         
-        /* Month End Modal */
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -367,11 +367,11 @@
         
         .modal-content {
             background-color: white;
-            margin: 15% auto;
+            margin: 20% auto;
             padding: 20px;
-            border: 1px solid #888;
-            width: 400px;
-            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 12px;
         }
         
         .close {
@@ -381,27 +381,26 @@
             font-weight: bold;
             cursor: pointer;
         }
-        
-        .close:hover {
-            color: black;
-        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Top Balance Bar -->
-        <div class="balance-bar">
-            <div id="dailyBalance" class="balance-display balance-positive">
-                Income: $0.00 - Expenses: $0.00 = Balance: $0.00
-            </div>
+    <!-- Top Balance Bar -->
+    <div class="balance-bar">
+        <div id="dailyBalance" class="balance-display balance-positive">
+            Income: $0.00 - Expenses: $0.00 = $0.00
         </div>
-        
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Left Sidebar - Entry Form -->
-            <div class="entry-form">
-                <h2>Add Entry</h2>
-                <form id="entryForm">
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Entry Form Section -->
+        <div class="section" id="entrySection">
+            <div class="section-header" onclick="toggleSection('entrySection')">
+                <span>Add Entry</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content">
+                <form id="entryForm" class="entry-form">
                     <div class="form-group">
                         <label for="entryDate">Date</label>
                         <input type="date" id="entryDate" required>
@@ -451,7 +450,7 @@
                     
                     <div class="form-group">
                         <label for="entryAmount">Amount</label>
-                        <input type="number" id="entryAmount" step="0.01" required>
+                        <input type="number" id="entryAmount" step="0.01" inputmode="decimal" required>
                     </div>
                     
                     <div class="form-group">
@@ -471,119 +470,141 @@
                     </div>
                     
                     <button type="submit" class="btn">Add Entry</button>
+                    
+                    <hr style="margin: 20px 0;">
+                    
+                    <button type="button" class="btn" onclick="saveData()">Save Month Data</button>
+                    <button type="button" class="btn" onclick="loadData()">Load Month Data</button>
+                    <button type="button" class="btn" onclick="endMonth()">End Month</button>
                 </form>
-                
-                <hr style="margin: 20px 0;">
-                
-                <button class="btn" onclick="saveData()">Save Month Data</button>
-                <button class="btn" onclick="loadData()">Load Month Data</button>
-                <button class="btn" onclick="endMonth()">End Month</button>
             </div>
-            
-            <!-- Center - Category Boxes -->
-            <div class="category-grid">
-                <div class="category-section">
-                    <h3>FIXED EXPENSES</h3>
-                    <div class="category-boxes" id="fixedBoxes">
-                        <!-- Fixed expense boxes will be generated here -->
-                    </div>
-                </div>
-                
-                <div class="category-section">
-                    <h3>VARIABLE EXPENSES</h3>
-                    <div class="category-boxes" id="variableBoxes">
-                        <!-- Variable expense boxes will be generated here -->
-                    </div>
+        </div>
+        
+        <!-- Fixed Expenses Section -->
+        <div class="section collapsed" id="fixedSection">
+            <div class="section-header" onclick="toggleSection('fixedSection')">
+                <span>Fixed Expenses</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content">
+                <div class="category-grid" id="fixedBoxes">
+                    <!-- Fixed expense boxes will be generated here -->
                 </div>
             </div>
-            
-            <!-- Right Sidebar - Transaction Log -->
-            <div class="transaction-log">
-                <h3>Transaction Log</h3>
-                <div class="log-filters">
-                    <select id="filterCategory" style="width: 100%; margin-bottom: 10px;">
-                        <option value="">All Categories</option>
-                        <option value="income">Income Only</option>
-                        <option value="expense">Expenses Only</option>
-                        <option value="savings">Savings Only</option>
-                    </select>
-                    <input type="date" id="filterStart" placeholder="Start Date" style="width: 48%; margin-right: 4%;">
-                    <input type="date" id="filterEnd" placeholder="End Date" style="width: 48%;">
-                    <button class="btn" onclick="clearFilters()" style="margin-top: 10px;">Clear Filters</button>
+        </div>
+        
+        <!-- Variable Expenses Section -->
+        <div class="section collapsed" id="variableSection">
+            <div class="section-header" onclick="toggleSection('variableSection')">
+                <span>Variable Expenses</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content">
+                <div class="category-grid" id="variableBoxes">
+                    <!-- Variable expense boxes will be generated here -->
                 </div>
-                <div id="transactionList">
+            </div>
+        </div>
+        
+        <!-- Transactions Section -->
+        <div class="section collapsed" id="transactionSection">
+            <div class="section-header" onclick="toggleSection('transactionSection')">
+                <span>Recent Transactions</span>
+                <span class="toggle-icon">▼</span>
+            </div>
+            <div class="section-content">
+                <div class="transaction-list" id="transactionList">
                     <!-- Transactions will be displayed here -->
                 </div>
             </div>
         </div>
         
         <!-- Savings Section -->
-        <div class="savings-section">
-            <h3>SAVINGS ACCOUNTS</h3>
-            <div id="savingsGoal" class="savings-goal goal-red">
-                <h4>MONTHLY SAVINGS GOAL</h4>
-                <div>Target: $6,000.00</div>
-                <div>Completed: <span id="savingsCompleted">$0.00</span> <span id="savingsCheck"></span></div>
+        <div class="section collapsed" id="savingsSection">
+            <div class="section-header" onclick="toggleSection('savingsSection')">
+                <span>Savings Accounts</span>
+                <span class="toggle-icon">▼</span>
             </div>
-            
-            <div class="savings-accounts">
-                <div class="savings-account">
-                    <h4>MARCUS SAVINGS</h4>
-                    <div class="savings-line">
-                        <span>Starting:</span>
-                        <span id="marcusStarting">$22,234.46</span>
+            <div class="section-content">
+                <div class="savings-container">
+                    <div id="savingsGoal" class="savings-goal goal-red">
+                        <h4>MONTHLY SAVINGS GOAL</h4>
+                        <div>Target: $6,000.00</div>
+                        <div>Completed: <span id="savingsCompleted">$0.00</span> <span id="savingsCheck"></span></div>
                     </div>
-                    <div class="savings-line">
-                        <span>+ Deposits:</span>
-                        <span id="marcusDeposits">$0.00</span>
+                    
+                    <div class="savings-account">
+                        <h4>MARCUS SAVINGS</h4>
+                        <div class="savings-line">
+                            <span>Starting:</span>
+                            <span>$22,234.46</span>
+                        </div>
+                        <div class="savings-line">
+                            <span>+ Deposits:</span>
+                            <span id="marcusDeposits">$0.00</span>
+                        </div>
+                        <div class="savings-line">
+                            <span>- Withdrawals:</span>
+                            <span id="marcusWithdrawals">$0.00</span>
+                        </div>
+                        <div class="savings-line">
+                            <span>Current:</span>
+                            <span id="marcusCurrent" class="font-bold">$22,234.46</span>
+                        </div>
                     </div>
-                    <div class="savings-line">
-                        <span>- Withdrawals:</span>
-                        <span id="marcusWithdrawals">$0.00</span>
-                    </div>
-                    <div class="savings-line">
-                        <span>Current:</span>
-                        <span id="marcusCurrent" class="editable-balance font-bold" onclick="editBalance('marcus')">$22,234.46</span>
-                    </div>
-                </div>
-                
-                <div class="savings-account">
-                    <h4>SCHWAB INVESTMENT</h4>
-                    <div class="savings-line">
-                        <span>Starting:</span>
-                        <span id="schwabStarting">$6,107.08</span>
-                    </div>
-                    <div class="savings-line">
-                        <span>+ Deposits:</span>
-                        <span id="schwabDeposits">$0.00</span>
-                    </div>
-                    <div class="savings-line">
-                        <span>- Withdrawals:</span>
-                        <span id="schwabWithdrawals">$0.00</span>
-                    </div>
-                    <div class="savings-line">
-                        <span>Current:</span>
-                        <span id="schwabCurrent" class="editable-balance font-bold" onclick="editBalance('schwab')">$6,107.08</span>
-                    </div>
-                </div>
-                
-                <div class="tracking-boxes">
-                    <div class="tracking-box">
-                        <h4>CHASE CC USAGE</h4>
-                        <div>This Month:</div>
-                        <div id="chaseCCTotal" class="tracking-amount">$0.00</div>
+                    
+                    <div class="savings-account">
+                        <h4>SCHWAB INVESTMENT</h4>
+                        <div class="savings-line">
+                            <span>Starting:</span>
+                            <span>$6,107.08</span>
+                        </div>
+                        <div class="savings-line">
+                            <span>+ Deposits:</span>
+                            <span id="schwabDeposits">$0.00</span>
+                        </div>
+                        <div class="savings-line">
+                            <span>- Withdrawals:</span>
+                            <span id="schwabWithdrawals">$0.00</span>
+                        </div>
+                        <div class="savings-line">
+                            <span>Current:</span>
+                            <span id="schwabCurrent" class="font-bold">$6,107.08</span>
+                        </div>
                     </div>
                     
                     <div class="tracking-box">
-                        <h4>VARIABLE EXPENSES TOTAL</h4>
-                        <div>Running Total:</div>
-                        <div id="variableTotal" class="tracking-amount">$0.00</div>
-                        <div style="font-size: 12px; color: #718096; margin-top: 5px;">
-                            Budget: $1,115.02
-                        </div>
+                        <h4>CHASE CC USAGE</h4>
+                        <div class="tracking-amount" id="chaseCCTotal">$0.00</div>
+                    </div>
+                    
+                    <div class="tracking-box">
+                        <h4>VARIABLE EXPENSES</h4>
+                        <div class="tracking-amount" id="variableTotal">$0.00</div>
+                        <div style="font-size: 12px; color: #718096;">Budget: $1,115.02</div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Bottom Fixed Bar -->
+    <div class="bottom-bar">
+        <div class="bottom-stat">
+            <div class="bottom-stat-label">Fixed</div>
+            <div class="bottom-stat-value" id="fixedSpent">$0</div>
+        </div>
+        <div class="bottom-stat">
+            <div class="bottom-stat-label">Variable</div>
+            <div class="bottom-stat-value" id="variableSpent">$0</div>
+        </div>
+        <div class="bottom-stat">
+            <div class="bottom-stat-label">Savings</div>
+            <div class="bottom-stat-value" id="savingsTotal">$0</div>
+        </div>
+        <div class="bottom-stat">
+            <div class="bottom-stat-label">CC Used</div>
+            <div class="bottom-stat-value" id="ccUsed">$0</div>
         </div>
     </div>
     
@@ -641,14 +662,14 @@
             // Set up form submission
             document.getElementById('entryForm').addEventListener('submit', handleSubmit);
             
-            // Set up filters
-            document.getElementById('filterCategory').addEventListener('change', filterTransactions);
-            document.getElementById('filterStart').addEventListener('change', filterTransactions);
-            document.getElementById('filterEnd').addEventListener('change', filterTransactions);
-            
             // Update displays
             updateAllDisplays();
         });
+        
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.classList.toggle('collapsed');
+        }
         
         function createCategoryBoxes() {
             const fixedContainer = document.getElementById('fixedBoxes');
@@ -656,25 +677,24 @@
             
             // Create fixed expense boxes
             Object.entries(budgets.fixed).forEach(([category, budget]) => {
-                fixedContainer.appendChild(createCategoryBox(category, budget));
+                fixedContainer.appendChild(createCategoryBox(category, budget, true));
             });
             
             // Create variable expense boxes
             Object.entries(budgets.variable).forEach(([category, budget]) => {
-                variableContainer.appendChild(createCategoryBox(category, budget));
+                variableContainer.appendChild(createCategoryBox(category, budget, false));
             });
         }
         
-        function createCategoryBox(category, budget) {
+        function createCategoryBox(category, budget, isFixed) {
             const box = document.createElement('div');
-            const isFixed = budgets.fixed.hasOwnProperty(category);
             box.className = isFixed ? 'category-box box-blue' : 'category-box box-green';
             box.id = `box-${category.replace(/\s/g, '-')}`;
             box.innerHTML = `
                 <h4>${category}</h4>
-                <div class="amount budget">Budget: ${budget.toFixed(2)}</div>
+                <div class="amount budget">Budget: $${budget.toFixed(2)}</div>
                 <div class="amount spent">Spent: $0.00</div>
-                <div class="amount remaining text-green">Remaining: ${budget.toFixed(2)}</div>
+                <div class="amount remaining text-green">Remaining: $${budget.toFixed(2)}</div>
             `;
             return box;
         }
@@ -697,7 +717,7 @@
                     notes: 'Budget portion'
                 });
                 
-                // Create savings entry - balance will be updated automatically by addTransaction
+                // Create savings entry
                 addTransaction({
                     date: document.getElementById('entryDate').value,
                     category: 'Marcus Deposit',
@@ -740,7 +760,7 @@
             transaction.id = Date.now();
             transactions.push(transaction);
             
-            // Update savings balances if needed (no pending check needed now)
+            // Update savings balances if needed
             if (transaction.type === 'savings') {
                 updateSavingsBalances(transaction);
             }
@@ -764,87 +784,13 @@
             }
         }
         
-        function updateSavingsDisplay() {
-            // Update savings goal - count all Marcus deposits (no pending check needed)
-            const marcusDeposits = transactions
-                .filter(t => t.category === 'Marcus Deposit')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            document.getElementById('savingsCompleted').textContent = `${marcusDeposits.toFixed(2)}`;
-            
-            const goalDiv = document.getElementById('savingsGoal');
-            goalDiv.className = 'savings-goal';
-            if (marcusDeposits >= 6000) {
-                goalDiv.classList.add('goal-green');
-                document.getElementById('savingsCheck').textContent = '✓';
-            } else if (marcusDeposits >= 3000) {
-                goalDiv.classList.add('goal-yellow');
-                document.getElementById('savingsCheck').textContent = '';
-            } else {
-                goalDiv.classList.add('goal-red');
-                document.getElementById('savingsCheck').textContent = '';
-            }
-            
-            // Update account displays
-            const marcusTransactions = transactions.filter(t => 
-                t.category === 'Marcus Deposit' || t.category === 'Marcus Withdrawal' || 
-                t.category === 'Transfer: Marcus to Schwab' || t.category === 'Transfer: Schwab to Marcus'
-            );
-            
-            const marcusDepositsTotal = marcusTransactions
-                .filter(t => t.category === 'Marcus Deposit')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            const marcusWithdrawalsTotal = marcusTransactions
-                .filter(t => t.category === 'Marcus Withdrawal' || t.category === 'Transfer: Marcus to Schwab')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            document.getElementById('marcusDeposits').textContent = `${marcusDepositsTotal.toFixed(2)}`;
-            document.getElementById('marcusWithdrawals').textContent = `${marcusWithdrawalsTotal.toFixed(2)}`;
-            document.getElementById('marcusCurrent').textContent = `${savingsBalances.marcus.current.toFixed(2)}`;
-            
-            // Update Schwab
-            const schwabTransactions = transactions.filter(t => 
-                t.category === 'Schwab Deposit' || t.category === 'Schwab Withdrawal' || 
-                t.category === 'Transfer: Schwab to Marcus' || t.category === 'Transfer: Marcus to Schwab'
-            );
-            
-            const schwabDepositsTotal = schwabTransactions
-                .filter(t => t.category === 'Schwab Deposit' || t.category === 'Transfer: Marcus to Schwab')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            const schwabWithdrawalsTotal = schwabTransactions
-                .filter(t => t.category === 'Schwab Withdrawal' || t.category === 'Transfer: Schwab to Marcus')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            document.getElementById('schwabDeposits').textContent = `${schwabDepositsTotal.toFixed(2)}`;
-            document.getElementById('schwabWithdrawals').textContent = `${schwabWithdrawalsTotal.toFixed(2)}`;
-            document.getElementById('schwabCurrent').textContent = `${savingsBalances.schwab.current.toFixed(2)}`;
-        }
-        
-        function updateTrackingBoxes() {
-            // Update Chase CC Usage
-            const chaseCCTotal = transactions
-                .filter(t => t.type === 'expense' && t.payment === 'Chase CC')
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            document.getElementById('chaseCCTotal').textContent = `${chaseCCTotal.toFixed(2)}`;
-            
-            // Update Variable Expenses Total
-            const variableCategories = Object.keys(budgets.variable);
-            const variableTotal = transactions
-                .filter(t => t.type === 'expense' && variableCategories.includes(t.category))
-                .reduce((sum, t) => sum + t.amount, 0);
-            
-            document.getElementById('variableTotal').textContent = `${variableTotal.toFixed(2)}`;
-        }
-        
         function updateAllDisplays() {
             updateDailyBalance();
             updateCategoryBoxes();
             updateTransactionLog();
             updateSavingsDisplay();
             updateTrackingBoxes();
+            updateBottomBar();
         }
         
         function updateDailyBalance() {
@@ -859,22 +805,26 @@
             const balance = income - expenses;
             
             const balanceDiv = document.getElementById('dailyBalance');
-            balanceDiv.textContent = `Income: $${income.toFixed(2)} - Expenses: $${expenses.toFixed(2)} = Balance: $${balance.toFixed(2)}`;
+            balanceDiv.innerHTML = `Income: $${income.toFixed(2)} - Expenses: $${expenses.toFixed(2)} = <strong>$${balance.toFixed(2)}</strong>`;
             balanceDiv.className = `balance-display ${balance >= 0 ? 'balance-positive' : 'balance-negative'}`;
         }
         
         function updateCategoryBoxes() {
             // Reset all boxes
             document.querySelectorAll('.category-box').forEach(box => {
-                const spentDiv = box.querySelector('.spent');
-                const remainingDiv = box.querySelector('.remaining');
                 const budgetText = box.querySelector('.budget').textContent;
                 const budgetMatch = budgetText.match(/\$[\d,]+\.?\d*/);
                 if (budgetMatch) {
                     const budgetAmount = budgetMatch[0];
-                    spentDiv.textContent = 'Spent: $0.00';
-                    remainingDiv.textContent = `Remaining: ${budgetAmount}`;
-                    remainingDiv.className = 'amount remaining text-green';
+                    box.querySelector('.spent').textContent = 'Spent: $0.00';
+                    box.querySelector('.remaining').textContent = `Remaining: ${budgetAmount}`;
+                    box.querySelector('.remaining').className = 'amount remaining text-green';
+                }
+                
+                // Reset fixed expenses to blue
+                const categoryName = box.querySelector('h4').textContent;
+                if (budgets.fixed.hasOwnProperty(categoryName)) {
+                    box.className = 'category-box box-blue';
                 }
             });
             
@@ -888,24 +838,35 @@
             
             // Update boxes
             Object.entries(spending).forEach(([category, spent]) => {
-                const boxId = `box-${category.replace(/[\s]/g, '')}`;
+                const boxId = `box-${category.replace(/\s/g, '-')}`;
                 const box = document.getElementById(boxId);
                 if (box) {
                     const budget = budgets.fixed[category] || budgets.variable[category] || 0;
                     const remaining = budget - spent;
                     const percentage = (spent / budget) * 100;
                     
-                    box.querySelector('.spent').textContent = `Spent: ${spent.toFixed(2)}`;
-                    box.querySelector('.remaining').textContent = `Remaining: ${remaining.toFixed(2)}`;
+                    box.querySelector('.spent').textContent = `Spent: $${spent.toFixed(2)}`;
+                    box.querySelector('.remaining').textContent = `Remaining: $${remaining.toFixed(2)}`;
                     
                     // Update box color
                     box.className = 'category-box';
-                    if (percentage < 50) {
-                        box.classList.add('box-green');
-                    } else if (percentage < 90) {
-                        box.classList.add('box-yellow');
+                    
+                    // For fixed expenses: blue if unpaid, green if paid
+                    if (budgets.fixed.hasOwnProperty(category)) {
+                        if (spent >= budget) {
+                            box.classList.add('box-green'); // Paid
+                        } else {
+                            box.classList.add('box-blue'); // Unpaid
+                        }
                     } else {
-                        box.classList.add('box-red');
+                        // Variable expenses use percentage-based colors
+                        if (percentage < 50) {
+                            box.classList.add('box-green');
+                        } else if (percentage < 90) {
+                            box.classList.add('box-yellow');
+                        } else {
+                            box.classList.add('box-red');
+                        }
                     }
                     
                     // Update remaining text color
@@ -922,10 +883,11 @@
         
         function updateTransactionLog() {
             const list = document.getElementById('transactionList');
-            const filteredTransactions = getFilteredTransactions();
-            
             list.innerHTML = '';
-            filteredTransactions.forEach(transaction => {
+            
+            const recentTransactions = transactions.slice(-10).reverse();
+            
+            recentTransactions.forEach(transaction => {
                 const item = document.createElement('div');
                 item.className = 'transaction-item';
                 
@@ -934,8 +896,8 @@
                 
                 item.innerHTML = `
                     <div class="transaction-header">
-                        <span><strong>${transaction.category}</strong></span>
-                        <span class="${amountClass} font-bold">${amountSign}${transaction.amount.toFixed(2)}</span>
+                        <strong>${transaction.category}</strong>
+                        <span class="${amountClass} transaction-amount">${amountSign}$${transaction.amount.toFixed(2)}</span>
                     </div>
                     <div class="transaction-details">
                         ${transaction.date} | ${transaction.payment}
@@ -951,45 +913,13 @@
             });
         }
         
-        function getFilteredTransactions() {
-            let filtered = [...transactions];
-            
-            const categoryFilter = document.getElementById('filterCategory').value;
-            if (categoryFilter) {
-                filtered = filtered.filter(t => t.type === categoryFilter);
-            }
-            
-            const startDate = document.getElementById('filterStart').value;
-            if (startDate) {
-                filtered = filtered.filter(t => t.date >= startDate);
-            }
-            
-            const endDate = document.getElementById('filterEnd').value;
-            if (endDate) {
-                filtered = filtered.filter(t => t.date <= endDate);
-            }
-            
-            return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-        }
-        
-        function filterTransactions() {
-            updateTransactionLog();
-        }
-        
-        function clearFilters() {
-            document.getElementById('filterCategory').value = '';
-            document.getElementById('filterStart').value = '';
-            document.getElementById('filterEnd').value = '';
-            updateTransactionLog();
-        }
-        
         function updateSavingsDisplay() {
-            // Update savings goal - count all Marcus deposits (no pending check needed)
+            // Update savings goal
             const marcusDeposits = transactions
                 .filter(t => t.category === 'Marcus Deposit')
                 .reduce((sum, t) => sum + t.amount, 0);
             
-            document.getElementById('savingsCompleted').textContent = `${marcusDeposits.toFixed(2)}`;
+            document.getElementById('savingsCompleted').textContent = `$${marcusDeposits.toFixed(2)}`;
             
             const goalDiv = document.getElementById('savingsGoal');
             goalDiv.className = 'savings-goal';
@@ -1004,76 +934,77 @@
                 document.getElementById('savingsCheck').textContent = '';
             }
             
-            // Update account displays
-            const marcusTransactions = transactions.filter(t => 
-                t.category === 'Marcus Deposit' || t.category === 'Marcus Withdrawal' || 
-                t.category === 'Transfer: Marcus to Schwab' || t.category === 'Transfer: Schwab to Marcus'
-            );
-            
-            const marcusDepositsTotal = marcusTransactions
+            // Update Marcus
+            const marcusDepositsTotal = transactions
                 .filter(t => t.category === 'Marcus Deposit')
                 .reduce((sum, t) => sum + t.amount, 0);
             
-            const marcusWithdrawalsTotal = marcusTransactions
+            const marcusWithdrawalsTotal = transactions
                 .filter(t => t.category === 'Marcus Withdrawal' || t.category === 'Transfer: Marcus to Schwab')
                 .reduce((sum, t) => sum + t.amount, 0);
             
-            document.getElementById('marcusDeposits').textContent = `${marcusDepositsTotal.toFixed(2)}`;
-            document.getElementById('marcusWithdrawals').textContent = `${marcusWithdrawalsTotal.toFixed(2)}`;
-            document.getElementById('marcusCurrent').textContent = `${savingsBalances.marcus.current.toFixed(2)}`;
+            document.getElementById('marcusDeposits').textContent = `$${marcusDepositsTotal.toFixed(2)}`;
+            document.getElementById('marcusWithdrawals').textContent = `$${marcusWithdrawalsTotal.toFixed(2)}`;
+            document.getElementById('marcusCurrent').textContent = `$${savingsBalances.marcus.current.toFixed(2)}`;
             
             // Update Schwab
-            const schwabTransactions = transactions.filter(t => 
-                t.category === 'Schwab Deposit' || t.category === 'Schwab Withdrawal' || 
-                t.category === 'Transfer: Schwab to Marcus' || t.category === 'Transfer: Marcus to Schwab'
-            );
-            
-            const schwabDepositsTotal = schwabTransactions
+            const schwabDepositsTotal = transactions
                 .filter(t => t.category === 'Schwab Deposit' || t.category === 'Transfer: Marcus to Schwab')
                 .reduce((sum, t) => sum + t.amount, 0);
             
-            const schwabWithdrawalsTotal = schwabTransactions
+            const schwabWithdrawalsTotal = transactions
                 .filter(t => t.category === 'Schwab Withdrawal' || t.category === 'Transfer: Schwab to Marcus')
                 .reduce((sum, t) => sum + t.amount, 0);
             
-            document.getElementById('schwabDeposits').textContent = `${schwabDepositsTotal.toFixed(2)}`;
-            document.getElementById('schwabWithdrawals').textContent = `${schwabWithdrawalsTotal.toFixed(2)}`;
-            document.getElementById('schwabCurrent').textContent = `${savingsBalances.schwab.current.toFixed(2)}`;
+            document.getElementById('schwabDeposits').textContent = `$${schwabDepositsTotal.toFixed(2)}`;
+            document.getElementById('schwabWithdrawals').textContent = `$${schwabWithdrawalsTotal.toFixed(2)}`;
+            document.getElementById('schwabCurrent').textContent = `$${savingsBalances.schwab.current.toFixed(2)}`;
         }
         
-        function editBalance(account) {
-            const currentSpan = document.getElementById(`${account}Current`);
-            const currentValue = savingsBalances[account].current;
+        function updateTrackingBoxes() {
+            // Update Chase CC Usage
+            const chaseCCTotal = transactions
+                .filter(t => t.type === 'expense' && t.payment === 'Chase CC')
+                .reduce((sum, t) => sum + t.amount, 0);
             
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.step = '0.01';
-            input.value = currentValue;
-            input.className = 'balance-input';
+            document.getElementById('chaseCCTotal').textContent = `$${chaseCCTotal.toFixed(2)}`;
             
-            input.onblur = function() {
-                savingsBalances[account].current = parseFloat(input.value);
-                updateSavingsDisplay();
-            };
+            // Update Variable Expenses Total
+            const variableCategories = Object.keys(budgets.variable);
+            const variableTotal = transactions
+                .filter(t => t.type === 'expense' && variableCategories.includes(t.category))
+                .reduce((sum, t) => sum + t.amount, 0);
             
-            input.onkeypress = function(e) {
-                if (e.key === 'Enter') {
-                    input.blur();
-                }
-            };
-            
-            currentSpan.innerHTML = '';
-            currentSpan.appendChild(input);
-            input.focus();
+            document.getElementById('variableTotal').textContent = `$${variableTotal.toFixed(2)}`;
         }
         
-        function completeSavings(transactionId) {
-            const transaction = transactions.find(t => t.id === transactionId);
-            if (transaction && transaction.pending) {
-                transaction.pending = false;
-                updateSavingsBalances(transaction);
-                updateAllDisplays();
-            }
+        function updateBottomBar() {
+            // Fixed expenses spent
+            const fixedCategories = Object.keys(budgets.fixed);
+            const fixedSpent = transactions
+                .filter(t => t.type === 'expense' && fixedCategories.includes(t.category))
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            // Variable expenses spent
+            const variableCategories = Object.keys(budgets.variable);
+            const variableSpent = transactions
+                .filter(t => t.type === 'expense' && variableCategories.includes(t.category))
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            // Savings total
+            const savingsTotal = transactions
+                .filter(t => t.type === 'savings' && (t.category === 'Marcus Deposit' || t.category === 'Schwab Deposit'))
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            // CC used
+            const ccUsed = transactions
+                .filter(t => t.type === 'expense' && t.payment === 'Chase CC')
+                .reduce((sum, t) => sum + t.amount, 0);
+            
+            document.getElementById('fixedSpent').textContent = `$${fixedSpent.toFixed(0)}`;
+            document.getElementById('variableSpent').textContent = `$${variableSpent.toFixed(0)}`;
+            document.getElementById('savingsTotal').textContent = `$${savingsTotal.toFixed(0)}`;
+            document.getElementById('ccUsed').textContent = `$${ccUsed.toFixed(0)}`;
         }
         
         function editTransaction(transactionId) {
@@ -1084,6 +1015,12 @@
                 document.getElementById('entryAmount').value = transaction.amount;
                 document.getElementById('entryPayment').value = transaction.payment;
                 document.getElementById('entryNotes').value = transaction.notes || '';
+                
+                // Expand entry section
+                document.getElementById('entrySection').classList.remove('collapsed');
+                
+                // Scroll to top
+                window.scrollTo(0, 0);
                 
                 deleteTransaction(transactionId);
             }
