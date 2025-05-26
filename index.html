@@ -814,9 +814,40 @@
             marcus: { starting: 22234.46, current: 22234.46 },
             schwab: { starting: 6107.08, current: 6107.08 }
         };
+
+        // Auto-save functionality
+        function autoSaveData() {
+            const data = {
+                transactions: transactions,
+                savingsBalances: savingsBalances,
+                lastSaved: new Date().toISOString(),
+                month: new Date().toISOString().slice(0, 7)
+            };
+            localStorage.setItem('budgetTrackerData', JSON.stringify(data));
+        }
+
+        function autoLoadData() {
+            const savedData = localStorage.getItem('budgetTrackerData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    transactions = data.transactions || [];
+                    savingsBalances = data.savingsBalances || savingsBalances;
+                    console.log('Data auto-loaded from previous session');
+                    return true;
+                } catch (error) {
+                    console.log('Error loading saved data:', error);
+                    return false;
+                }
+            }
+            return false;
+        }
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Auto-load previous data
+            autoLoadData();
+            
             // Set today's date
             document.getElementById('entryDate').valueAsDate = new Date();
             
@@ -1054,6 +1085,9 @@
             if (transaction.type === 'savings') {
                 updateSavingsBalances(transaction);
             }
+            
+            // Auto-save after each transaction
+            autoSaveData();
         }
         
         function updateSavingsBalances(transaction) {
@@ -1341,6 +1375,7 @@
                 }
                 
                 transactions.splice(index, 1);
+                autoSaveData(); // Auto-save after deletion
                 updateAllDisplays();
             }
         }
